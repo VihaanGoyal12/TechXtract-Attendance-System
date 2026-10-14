@@ -1,0 +1,11 @@
+
+[Image]
+
+[Image:python_version < "3.5"]
+pillow<6.0,>=3.0
+
+[Image:python_version >= "3.5" and python_version < "3.6"]
+pillow<8.0,>=3.0
+
+[Image:python_version >= "3.6"]
+pillow>=8.0
