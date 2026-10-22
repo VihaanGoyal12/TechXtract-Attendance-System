@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
 from backend.app.db.session import get_db
-from backend.app.models import Event, EventStatus, User, UserRole, Attendance, EventRegistration
+from backend.app.models import Event, EventStatus, User, UserRole, Attendance, EventRegistration, AttendanceAuditLog
 from backend.app.schemas import EventResponse, EventCreate, EventUpdate
 from backend.app.core.security import get_current_user, require_roles
 
@@ -132,6 +132,13 @@ def update_event(
         event.start_datetime = event_in.start_datetime
     if event_in.end_datetime is not None:
         event.end_datetime = event_in.end_datetime
+
+    # Validate chronological ordering after applying updates
+    effective_start = event.start_datetime
+    effective_end = event.end_datetime
+    if effective_end <= effective_start:
+        raise HTTPException(status_code=400, detail="End datetime must be after start datetime")
+
     if event_in.registration_required is not None:
         event.registration_required = event_in.registration_required
     if event_in.attendance_required is not None:
@@ -154,6 +161,10 @@ def change_event_status(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
+    # Ownership guard: coordinators can only change their own events
+    if current_user.role != UserRole.SUPER_ADMIN.value and event.created_by_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You do not have permission to modify this event")
+
     target_status = new_status.upper()
     allowed = ALLOWED_TRANSITIONS.get(event.status, [])
     if target_status not in allowed and current_user.role != UserRole.SUPER_ADMIN.value:
@@ -172,6 +183,17 @@ def delete_event(id: int, db: Session = Depends(get_db)):
     event = db.query(Event).filter(Event.id == id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+
+    # Protect cryptographic audit chain: prevent hard deletion of events with audit logs
+    audit_count = db.query(AttendanceAuditLog).filter(AttendanceAuditLog.event_id == id).count()
+    if audit_count > 0:
+        # Soft-delete: archive the event instead of destroying audit chain integrity
+        event.status = EventStatus.ARCHIVED.value
+        db.commit()
+        return {
+            "message": f"Event #{id} ({event.title}) has been archived (cannot hard-delete: {audit_count} audit log entries exist to preserve chain integrity)"
+        }
+
     db.delete(event)
     db.commit()
     return {"message": f"Event #{id} ({event.title}) deleted successfully"}

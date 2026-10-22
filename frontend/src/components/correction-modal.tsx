@@ -13,10 +13,24 @@ interface CorrectionModalProps {
 }
 
 export function CorrectionModal({ record, isOpen, onClose, onSuccess }: CorrectionModalProps) {
-  const [newStatus, setNewStatus] = useState<string>('EXCUSED');
+  const statusOptions = record
+    ? ['PRESENT', 'LATE', 'EXCUSED', 'ABSENT'].filter((s) => s !== record.status)
+    : ['PRESENT', 'LATE', 'EXCUSED', 'ABSENT'];
+
+  const [newStatus, setNewStatus] = useState<string>(statusOptions[0] || 'EXCUSED');
   const [reason, setReason] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Reset state when the record changes (different attendance record selected)
+  React.useEffect(() => {
+    if (record) {
+      const options = ['PRESENT', 'LATE', 'EXCUSED', 'ABSENT'].filter((s) => s !== record.status);
+      setNewStatus(options[0] || 'EXCUSED');
+      setReason('');
+      setError(null);
+    }
+  }, [record?.id, record?.status]);
 
   if (!isOpen || !record) return null;
 
@@ -42,10 +56,6 @@ export function CorrectionModal({ record, isOpen, onClose, onSuccess }: Correcti
       setIsSubmitting(false);
     }
   };
-
-  const statusOptions = ['PRESENT', 'LATE', 'EXCUSED', 'ABSENT'].filter(
-    (s) => s !== record.status
-  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">

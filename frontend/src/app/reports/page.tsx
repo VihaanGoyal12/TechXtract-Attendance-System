@@ -92,7 +92,7 @@ export default function ReportsPage() {
           subtitle="Generate verified event reports, compute turnout metrics, and export compliant attendance CSVs"
         />
 
-        <main className="p-6 space-y-6 max-w-7xl">
+        <main className="p-3.5 sm:p-6 pb-24 md:pb-8 space-y-6 max-w-7xl">
           {/* Society Level High-Level Rollup */}
           <div className="space-y-3">
             <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">

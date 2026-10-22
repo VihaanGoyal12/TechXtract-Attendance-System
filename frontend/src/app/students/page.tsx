@@ -188,7 +188,7 @@ export default function StudentsPage() {
           }
         />
 
-        <main className="p-6 space-y-6 max-w-7xl">
+        <main className="p-3.5 sm:p-6 space-y-6 max-w-7xl pb-24 md:pb-8">
           {/* Search & Filter Toolbar */}
           <div className="p-4 rounded-xl border border-neutral-800 bg-neutral-900/60 flex flex-col sm:flex-row gap-3 items-center justify-between">
             <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-72">

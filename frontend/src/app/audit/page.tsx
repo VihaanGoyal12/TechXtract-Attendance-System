@@ -86,7 +86,7 @@ export default function AuditPage() {
           }
         />
 
-        <main className="p-6 space-y-6 max-w-7xl">
+        <main className="p-3.5 sm:p-6 pb-24 md:pb-8 space-y-6 max-w-7xl">
           {/* Verification Status Hero Banner */}
           {verifyResult ? (
             <div
@@ -152,8 +152,8 @@ export default function AuditPage() {
               </span>
             </div>
 
-            <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 overflow-hidden shadow-xs">
-              <table className="w-full text-left text-xs font-mono">
+            <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 overflow-x-auto shadow-xs">
+              <table className="w-full min-w-[640px] text-left text-xs font-mono">
                 <thead>
                   <tr className="border-b border-neutral-800 bg-neutral-950/80 text-[10px] uppercase text-neutral-400 font-semibold tracking-wider font-sans">
                     <th className="py-3 px-4"># ID</th>

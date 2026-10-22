@@ -184,7 +184,7 @@ def test_scan_flow_and_duplicate_prevention():
     assert data_dup["status"] == "DUPLICATE"
     assert "already recorded" in data_dup["message"].lower()
 
-    # 3. Unregistered student scan -> MUST REJECT
+    # 3. Student scan without pre-registration -> MUST SUCCEED (no pre-registration required)
     unreg_payload = {
         "student_identifier": "TXT_OT_999_Unregistered",
         "scan_method": "BARCODE",
@@ -193,7 +193,9 @@ def test_scan_flow_and_duplicate_prevention():
     res_unreg = client.post(f"/api/events/{ev.id}/attendance/scan", json=unreg_payload, headers=headers)
     assert res_unreg.status_code == 200
     data_unreg = res_unreg.json()
-    assert data_unreg["status"] == "UNREGISTERED"
+    assert data_unreg["status"] == "SUCCESS"
+    assert data_unreg["attendance_status"] == "PRESENT"
+    assert data_unreg["student"]["name"] == "Unregistered Student"
 
     # 4. Unknown barcode -> MUST REJECT
     bad_payload = {

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import IntegrityError
 
 from backend.app.db.session import get_db
@@ -23,13 +23,14 @@ def get_event_registrations(
 
     regs = (
         db.query(EventRegistration)
+        .options(joinedload(EventRegistration.student))
         .filter(EventRegistration.event_id == event_id)
         .order_by(EventRegistration.registered_at.desc())
         .all()
     )
     result = []
     for r in regs:
-        st = db.query(Student).filter(Student.id == r.student_id).first()
+        st = r.student
         res = RegistrationResponse(
             id=r.id,
             event_id=r.event_id,
@@ -103,7 +104,9 @@ def bulk_register_students(
 
     added = 0
     skipped = 0
-    for sid in bulk_in.student_ids:
+    # Deduplicate student IDs to prevent redundant DB queries and potential constraint violations
+    unique_student_ids = list(dict.fromkeys(bulk_in.student_ids))
+    for sid in unique_student_ids:
         exists = db.query(EventRegistration).filter(
             EventRegistration.event_id == event_id,
             EventRegistration.student_id == sid

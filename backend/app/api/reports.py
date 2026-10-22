@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from backend.app.db.session import get_db
 from backend.app.models import Event, Student, Attendance, EventRegistration, User, UserRole
@@ -65,6 +65,7 @@ def export_event_attendance_csv(
 
     attendances = (
         db.query(Attendance)
+        .options(joinedload(Attendance.student))
         .filter(Attendance.event_id == event_id)
         .order_by(Attendance.marked_at.asc())
         .all()
@@ -90,7 +91,7 @@ def export_event_attendance_csv(
     ])
 
     for a in attendances:
-        st = db.query(Student).filter(Student.id == a.student_id).first()
+        st = a.student
         writer.writerow([
             st.enrollment_no if st else "N/A",
             st.name if st else "Unknown",

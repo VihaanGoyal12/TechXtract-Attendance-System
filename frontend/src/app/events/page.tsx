@@ -20,6 +20,7 @@ import {
   X,
   AlertCircle,
 } from 'lucide-react';
+import DateTimePicker from '@/components/DateTimePicker';
 
 export default function EventsPage() {
   const router = useRouter();
@@ -42,7 +43,7 @@ export default function EventsPage() {
   const [formVenue, setFormVenue] = useState('');
   const [formStart, setFormStart] = useState('');
   const [formEnd, setFormEnd] = useState('');
-  const [formRegRequired, setFormRegRequired] = useState(true);
+  const [formRegRequired, setFormRegRequired] = useState(false);
   const [formLateThreshold, setFormLateThreshold] = useState(15);
 
   useEffect(() => {
@@ -98,6 +99,12 @@ export default function EventsPage() {
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setModalError(null);
+
+    if (!formStart || !formEnd) {
+      setModalError('Please select both Start and End date/time using the calendar & watch interface.');
+      return;
+    }
+
     setIsCreating(true);
 
     try {
@@ -132,7 +139,7 @@ export default function EventsPage() {
     setFormVenue('');
     setFormStart('');
     setFormEnd('');
-    setFormRegRequired(true);
+    setFormRegRequired(false);
     setFormLateThreshold(15);
   };
 
@@ -157,10 +164,10 @@ export default function EventsPage() {
           }
         />
 
-        <main className="p-6 space-y-6 max-w-7xl">
+        <main className="p-3.5 sm:p-6 space-y-6 max-w-7xl pb-24 md:pb-8">
           {/* Filters & Search Toolbar */}
-          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-neutral-900 border border-neutral-800 text-xs">
+          <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-neutral-900 border border-neutral-800 text-xs overflow-x-auto max-w-full">
               {['ALL', 'OPEN', 'SCHEDULED', 'CLOSED', 'DRAFT'].map((tab) => (
                 <button
                   key={tab}
@@ -356,31 +363,21 @@ export default function EventsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1">
-                    Start Datetime <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={formStart}
-                    onChange={(e) => setFormStart(e.target.value)}
-                    className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-xs text-white focus:outline-hidden focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-neutral-300 mb-1">
-                    End Datetime <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={formEnd}
-                    onChange={(e) => setFormEnd(e.target.value)}
-                    className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 text-xs text-white focus:outline-hidden focus:border-blue-500"
-                  />
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <DateTimePicker
+                  label="Start Date & Time"
+                  required
+                  value={formStart}
+                  onChange={setFormStart}
+                  placeholder="Pick start date & time"
+                />
+                <DateTimePicker
+                  label="End Date & Time"
+                  required
+                  value={formEnd}
+                  onChange={setFormEnd}
+                  placeholder="Pick end date & time"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-2">
@@ -393,7 +390,7 @@ export default function EventsPage() {
                     className="rounded border-neutral-700 text-blue-600 focus:ring-0"
                   />
                   <label htmlFor="regRequired" className="text-xs text-neutral-300">
-                    Registration Required
+                    Pre-Registration Required
                   </label>
                 </div>
                 <div>

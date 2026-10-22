@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 
 from backend.app.db.session import get_db
@@ -70,9 +70,10 @@ def get_student(
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    # Fetch attendance history
+    # Fetch attendance history with eagerly-loaded event data (avoids N+1 queries)
     history = (
         db.query(Attendance)
+        .options(joinedload(Attendance.event))
         .filter(Attendance.student_id == student.id)
         .order_by(Attendance.marked_at.desc())
         .all()
@@ -80,7 +81,7 @@ def get_student(
 
     history_list = []
     for att in history:
-        ev = db.query(Event).filter(Event.id == att.event_id).first()
+        ev = att.event
         history_list.append({
             "attendance_id": att.id,
             "event_id": att.event_id,
@@ -113,6 +114,12 @@ def create_student(
         existing_barcode = db.query(Student).filter(Student.barcode_value == student_in.barcode_value).first()
         if existing_barcode:
             raise HTTPException(status_code=400, detail=f"Barcode value '{student_in.barcode_value}' is already assigned to {existing_barcode.name}")
+
+    # Verify email uniqueness if provided
+    if student_in.email:
+        existing_email = db.query(Student).filter(Student.email == student_in.email.strip().lower()).first()
+        if existing_email:
+            raise HTTPException(status_code=400, detail=f"Email '{student_in.email}' is already registered to {existing_email.name} ({existing_email.enrollment_no})")
 
     qr_token = f"STU-{uuid.uuid4().hex[:12].upper()}"
 
@@ -153,7 +160,13 @@ def update_student(
     if student_in.name is not None:
         student.name = student_in.name
     if student_in.email is not None:
-        student.email = student_in.email
+        norm_email = student_in.email.strip().lower() if student_in.email.strip() else None
+        # Verify email uniqueness on update
+        if norm_email and norm_email != (student.email or "").lower():
+            existing_email = db.query(Student).filter(Student.email == norm_email, Student.id != id).first()
+            if existing_email:
+                raise HTTPException(status_code=400, detail=f"Email '{norm_email}' is already registered to {existing_email.name} ({existing_email.enrollment_no})")
+        student.email = norm_email
     if student_in.department is not None:
         student.department = student_in.department
     if student_in.year is not None:

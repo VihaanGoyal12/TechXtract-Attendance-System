@@ -85,7 +85,7 @@ export default function DashboardPage() {
           }
         />
 
-        <main className="p-6 space-y-6 max-w-7xl">
+        <main className="p-3.5 sm:p-6 space-y-6 max-w-7xl pb-24 md:pb-8">
           {/* Key Operational Overview Counts (SRS Specified) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-5 rounded-xl border border-neutral-800 bg-neutral-900/50 flex items-center justify-between">

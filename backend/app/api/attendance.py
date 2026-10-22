@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from backend.app.db.session import get_db
 from backend.app.models import Attendance, Event, Student, User, UserRole, AttendanceAuditLog
@@ -19,14 +19,14 @@ def get_event_attendance(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    query = db.query(Attendance).filter(Attendance.event_id == event_id)
+    query = db.query(Attendance).options(joinedload(Attendance.student)).filter(Attendance.event_id == event_id)
     if status:
         query = query.filter(Attendance.status == status.upper())
 
     records = query.order_by(Attendance.marked_at.desc()).all()
     results = []
     for r in records:
-        st = db.query(Student).filter(Student.id == r.student_id).first()
+        st = r.student
         summary = None
         if st:
             summary = StudentSummary(

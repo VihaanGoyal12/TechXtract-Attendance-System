@@ -68,7 +68,7 @@ class Event(Base):
     venue = Column(String(255), nullable=False)
     start_datetime = Column(DateTime, nullable=False, index=True)
     end_datetime = Column(DateTime, nullable=False)
-    registration_required = Column(Boolean, default=True, nullable=False)
+    registration_required = Column(Boolean, default=False, nullable=False)
     attendance_required = Column(Boolean, default=True, nullable=False)
     late_threshold_minutes = Column(Integer, default=15, nullable=False)
     status = Column(String(50), default=EventStatus.DRAFT.value, nullable=False)

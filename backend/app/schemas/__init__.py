@@ -81,7 +81,7 @@ class EventBase(BaseModel):
     venue: str
     start_datetime: datetime
     end_datetime: datetime
-    registration_required: bool = True
+    registration_required: bool = False
     attendance_required: bool = True
     late_threshold_minutes: int = 15
 

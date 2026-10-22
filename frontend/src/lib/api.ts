@@ -1,4 +1,10 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+export function getApiBase(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  if (typeof window !== 'undefined') {
+    return '/api';
+  }
+  return 'http://127.0.0.1:8000/api';
+}
 
 export class ApiError extends Error {
   status: number;
@@ -39,7 +45,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}${endpoint}`, {
+  const res = await fetch(`${getApiBase()}${endpoint}`, {
     ...options,
     headers,
   });
@@ -103,6 +109,30 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+  scanAttendanceImage: async (eventId: number, file: File | Blob) => {
+    const token = getToken();
+    const formData = new FormData();
+    const filename = (file as File).name || 'scan_frame.jpg';
+    formData.append('file', file, filename);
+    const res = await fetch(`${getApiBase()}/events/${eventId}/attendance/scan-image`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    });
+    if (!res.ok) {
+      let errorDetail = 'Image scan failed';
+      try {
+        const errorData = await res.json();
+        errorDetail = errorData.detail || errorData.message || JSON.stringify(errorData);
+      } catch {
+        errorDetail = await res.text();
+      }
+      throw new ApiError(res.status, errorDetail);
+    }
+    return res.json();
+  },
   getEventAttendance: (eventId: number, status?: string) => {
     const q = status ? `?status=${status}` : '';
     return request<any[]>(`/events/${eventId}/attendance${q}`);
@@ -133,7 +163,7 @@ export const api = {
     const token = getToken();
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch(`${API_BASE}/students/import`, {
+    const res = await fetch(`${getApiBase()}/students/import`, {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
@@ -151,7 +181,7 @@ export const api = {
   getSocietyReport: () => request<any>('/reports/society'),
   downloadEventCsv: async (eventId: number, filename = 'attendance.csv') => {
     const token = getToken();
-    const res = await fetch(`${API_BASE}/reports/event/${eventId}/export/csv`, {
+    const res = await fetch(`${getApiBase()}/reports/event/${eventId}/export/csv`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     if (!res.ok) throw new Error('Failed to download CSV');

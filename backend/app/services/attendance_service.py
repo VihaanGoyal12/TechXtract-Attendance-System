@@ -98,22 +98,25 @@ def process_attendance_scan(
         barcode_value=student.barcode_value
     )
 
-    # 4. Check registration requirement if enabled
-    if event.registration_required:
-        reg = (
-            db.query(EventRegistration)
-            .filter(
-                EventRegistration.event_id == event.id,
-                EventRegistration.student_id == student.id
-            )
-            .first()
+    # 4. Registration requirement for attendance removed:
+    # All valid members/students can scan attendance directly.
+    # Auto-record registration record if not present so event stats remain consistent.
+    reg = (
+        db.query(EventRegistration)
+        .filter(
+            EventRegistration.event_id == event.id,
+            EventRegistration.student_id == student.id
         )
-        if not reg:
-            return ScanResponse(
-                status="UNREGISTERED",
-                message=f"{student.name} ({student.enrollment_no}) is not registered for this event",
-                student=student_summary
-            )
+        .first()
+    )
+    if not reg:
+        new_reg = EventRegistration(
+            event_id=event.id,
+            student_id=student.id,
+            registered_by_id=current_user.id
+        )
+        db.add(new_reg)
+        db.flush()
 
     # 5. Check duplicate attendance
     existing_attendance = (
